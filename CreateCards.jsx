@@ -192,7 +192,7 @@ function readCSV(file) {
 
     // Process each row of data
     var ROWSTART = 1;
-    var ROWSTOP = 50;
+    var ROWSTOP = 102;
     for (var i = ROWSTART; i < ROWSTOP; i++) {
         if (lines[i].replace(/^\s+|\s+$/g, "") === "") continue; // Skip empty rows
         var valuesLine = splitAndTrim(lines[i]);
@@ -318,22 +318,36 @@ function updateTeamFolders(row) {
 
 // Function to adjust font size based on character length
 function adjustFontSize(layerName, text, folderName, defaultFontSize, reducedFontSize, charLimit) {
-    
     try {
+        var layer;
+        
+        // Get the layer, optionally within a specified folder
         if (folderName) {
             var folder = app.activeDocument.layerSets.getByName(folderName);
             layer = folder.artLayers.getByName(layerName);
         } else {
             layer = app.activeDocument.artLayers.getByName(layerName);
         }
-        layer.textItem.contents = text;
-        if (text.length > charLimit) {
-            layer.textItem.size = reducedFontSize;
+        
+        if (layer && layer.kind === LayerKind.TEXT) {
+            var textItem = layer.textItem;
+
+            // Set the text content
+            textItem.contents = text;
+
+            // Adjust font size and baseline shift based on character count
+            if (text.length > charLimit) {
+                textItem.size = reducedFontSize;
+                textItem.baselineShift = -5; // Adjust baseline shift for longer text
+            } else {
+                textItem.size = defaultFontSize;
+                textItem.baselineShift = 0; // Reset baseline shift for shorter text
+            }
         } else {
-            layer.textItem.size = defaultFontSize;
+            throw new Error("Layer not found or not a text layer");
         }
     } catch (e) {
-        alert("Error adjusting font size for layer: " + layer.name + "\n" + e.message);
+        alert("Error adjusting font size for layer: " + layerName + "\n" + e.message);
     }
 }
 
@@ -362,7 +376,7 @@ function updateEventFolder(eventNumber, row) {
 
             // Update NAME
             updateTextLayer("NAME", resultName, eventFolderName);
-            adjustFontSize("NAME", resultName, eventFolderName, 65, 55, 21);
+            adjustFontSize("NAME", resultName, eventFolderName, 65, 54, 21);
 
             // Replace LOGO contents
             replaceContents("LOGO", app.activeDocument.path.fsName + "\\assets\\events\\" + sanitizeFileName(resultName) + ".png", eventFolderName);
